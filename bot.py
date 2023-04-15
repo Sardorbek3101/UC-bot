@@ -343,10 +343,13 @@ def get_text(message):
                             admins = cursor.fetchall()
                     bot.reply_to(message, "Nickname qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=types.ReplyKeyboardRemove())
+                    markup_inline = types.InlineKeyboardMarkup()
+                    item = types.InlineKeyboardButton(text="Подтвердить ✅", callback_data=f"{message.from_user.id}")
+                    markup_inline.add(item)
                     photo_file = bot.get_file(from_user[8])
                     photo_bytes = bot.download_file(photo_file.file_path)
                     for admin in admins:
-                        bot.send_photo(admin, photo_bytes, f"{from_user[7]}\n{from_user[9]}\nUC: {from_user[5]}\nPRICE: {from_user[6]}\n{from_user[10]}\n@{from_user[3]}")
+                        bot.send_photo(admin, photo_bytes, f"{from_user[7]}\n{from_user[9]}\nUC: {from_user[5]}\nPRICE: {from_user[6]}\n{from_user[10]}\n@{from_user[3]}", reply_markup=markup_inline)
         elif message.photo:
             if from_user[7]:
                 photo_id = message.photo[-1].file_id
