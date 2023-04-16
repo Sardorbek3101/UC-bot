@@ -1,6 +1,6 @@
-host = "localhost"
-user = "postgres"
-password = "Sard0631"
+host = "127.0.0.1"
+user = "root"
+password = ""
 db_name = "bot_db"
 
 # if connection:

@@ -1,22 +1,22 @@
 import telebot
-import psycopg2
+import pymysql
 
 from config import host, user, password, db_name
 from telebot import types
 
 try:
-    connection = psycopg2.connect(
+    connection = pymysql.connect(
         host=host,
+        port=3306,
         user=user,
         password=password,
-        database=db_name 
+        database=db_name,
+        cursorclass=pymysql.cursors.DictCursor
     )
-    connection.autocommit = True
 
-
-except Exception as _ex:
-    print("[INFO] Error while working with PostgreSQL", _ex)
-
+except Exception as ex:
+    print("connection refursed ...")
+    print(ex)
 
 BOT_TOKEN = ("6080749671:AAEO_NOXWO6YQ_yHkt-YOQeertuNl1Kkq8Y")
 
@@ -37,15 +37,16 @@ def send_welcome(message):
     if connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                f"""SELECT * from users WHERE user_id = {message.from_user.id}"""
+                f"""SELECT * from `users` WHERE user_id = {message.from_user.id}"""
             )
             check = cursor.fetchone()
 
         if not check:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"""INSERT INTO users(user_id, full_name, username) VALUES ({message.from_user.id}, '{full_name}', '{message.from_user.username}')"""
+                    f"""INSERT INTO `users`(user_id, full_name, username) VALUES ({message.from_user.id}, '{full_name}', '{message.from_user.username}')"""
                 )
+                connection.commit()
 
     markup_inline = types.InlineKeyboardMarkup()
     item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
@@ -60,29 +61,30 @@ def ansver(call):
     try:
         if connection:
             with connection.cursor() as cursor:
-                cursor.execute(f"""SELECT * from users WHERE user_id = {call.from_user.id}""")
+                cursor.execute(f"""SELECT * from `users` WHERE user_id = {call.from_user.id}""")
                 from_user = cursor.fetchone()
                 
-        valyuta = from_user[4]
+            valyuta = from_user['currency']
     except:
         valyuta = None  
-    if from_user[11] == 'superadmin' or from_user[11] == 'admin':
+    if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         if call.data == 'ru':
             bot.send_message(call.message.chat.id, "Язык применен !")
         if call.data == 'uz':
             bot.send_message(call.message.chat.id, "Til qabul qilindi ! !")
     else:
-        print(from_user[11])
         if call.data == 'uzs':
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE users SET currency = 'uzs' WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""UPDATE `users` SET currency = 'uzs' WHERE user_id = {call.from_user.id}""")
+                    connection.commit()
         elif call.data == 'rub':
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE users SET currency = 'rub' WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""UPDATE `users` SET currency = 'rub' WHERE user_id = {call.from_user.id}""")
+                    connection.commit()
 
-
+        tab_uc = False
         if call.data == 'ru':
             lan = 'ru'
             markup_inline = types.InlineKeyboardMarkup()
@@ -169,21 +171,21 @@ def ansver(call):
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{from_user[6]}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            bot.send_photo(call.message.chat.id, photo, f"{from_user['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
         elif call.data == "humo":
             photo = open('humo_photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{from_user[6]}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            bot.send_photo(call.message.chat.id, photo, f"{from_user['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
         elif call.data == "opcheck":
-            if from_user[7]:
+            if from_user['card']:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                button = types.KeyboardButton(f"{from_user[7]}")
+                button = types.KeyboardButton(f"{from_user['card']}")
                 markup_reply.add(button)
                 bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
             else:
-                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)")
         elif call.data == '66':
             uc = 66
             uzs = "11.000 UZS"
@@ -288,13 +290,16 @@ def ansver(call):
         if tab_uc:
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE users SET uc = {uc} WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""UPDATE `users` SET uc = {uc} WHERE user_id = {call.from_user.id}""")
+                    connection.commit()
                 if valyuta == "uzs":
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE users SET price = '{uzs}' WHERE user_id = {call.from_user.id}""")
+                        cursor.execute(f"""UPDATE `users` SET price = '{uzs}' WHERE user_id = {call.from_user.id}""")
+                        connection.commit()
                 elif valyuta == "rub":
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE users SET price = '{rub}' WHERE user_id = {call.from_user.id}""")
+                        cursor.execute(f"""UPDATE `users` SET price = '{rub}' WHERE user_id = {call.from_user.id}""")
+                        connection.commit()
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Uzcard", callback_data="uzcard")
             item_2 = types.InlineKeyboardButton(text="Humo", callback_data="humo")
@@ -305,28 +310,30 @@ def ansver(call):
 def get_text(message):
     if connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"""SELECT * from users WHERE user_id = {message.from_user.id}""")
+            cursor.execute(f"""SELECT * from `users` WHERE user_id = {message.from_user.id}""")
             from_user = cursor.fetchone()
-    if from_user[11] == 'superadmin' or from_user[11] == 'admin':
+    if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         pass
     else:
         if message.text:
             if message.text.lower().startswith("card"):
-                if from_user[6]:
+                if from_user['price']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE users SET card = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
+                            cursor.execute(f"""UPDATE `users` SET card = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
+                            connection.commit()
                     bot.reply_to(message, "Karta raqami qabul qilindi ✅")
                     bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)", reply_markup=types.ReplyKeyboardRemove())
                     # bot.send_sticker(call.message.chat.id, "CAACAgIAAxkBAAEIjgxkNrfCbktyzaZpKSm6wAeBsV-1PgACVyUAAl9weEuXcuNPf9dm4i8E")
             elif message.text.lower().startswith("id"):
-                if from_user[8]:
+                if from_user['photo_id']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE users SET pubg_id = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
-                    if from_user[10]:
+                            cursor.execute(f"""UPDATE `users` SET pubg_id = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
+                            connection.commit()
+                    if from_user['nickname']:
                         markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                        button = types.KeyboardButton(f"{from_user[10]}")
+                        button = types.KeyboardButton(f"{from_user['nickname']}")
                         markup_reply.add(button)
                         bot.reply_to(message, "ID qabul qilindi ✅")
                         bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)", reply_markup=markup_reply)
@@ -334,31 +341,33 @@ def get_text(message):
                         bot.reply_to(message, "ID qabul qilindi ✅")
                         bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)")
             elif message.text.lower().startswith("nickname"):
-                if from_user[9]:
+                if from_user['pubg_id']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE users SET nickname = '{message.text}' WHERE user_id = {message.from_user.id}""")
+                            cursor.execute(f"""UPDATE `users` SET nickname = '{message.text}' WHERE user_id = {message.from_user.id}""")
+                            connection.commit()
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""SELECT user_id from users WHERE status = 'superadmin' or status = 'admin'""")
+                            cursor.execute(f"""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
                             admins = cursor.fetchall()
                     bot.reply_to(message, "Nickname qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=types.ReplyKeyboardRemove())
                     markup_inline = types.InlineKeyboardMarkup()
                     item = types.InlineKeyboardButton(text="Подтвердить ✅", callback_data=f"{message.from_user.id}")
                     markup_inline.add(item)
-                    photo_file = bot.get_file(from_user[8])
+                    photo_file = bot.get_file(from_user['photo_id'])
                     photo_bytes = bot.download_file(photo_file.file_path)
                     for admin in admins:
-                        bot.send_photo(admin, photo_bytes, f"{from_user[7]}\n{from_user[9]}\nUC: {from_user[5]}\nPRICE: {from_user[6]}\n{from_user[10]}\n@{from_user[3]}", reply_markup=markup_inline)
+                        bot.send_photo(admin['user_id'], photo_bytes, f"{from_user['card']}\n{from_user['pubg_id']}\nUC: {from_user['uc']}\nPRICE: {from_user['price']}\n{from_user['nickname']}\n@{from_user['username']}", reply_markup=markup_inline)
         elif message.photo:
-            if from_user[7]:
+            if from_user['card']:
                 photo_id = message.photo[-1].file_id
                 if connection:
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE users SET photo_id = '{photo_id}' WHERE user_id = {message.from_user.id}""")
-                if from_user[9]:
+                        cursor.execute(f"""UPDATE `users` SET photo_id = '{photo_id}' WHERE user_id = {message.from_user.id}""")
+                        connection.commit()
+                if from_user['pubg_id']:
                     markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                    button = types.KeyboardButton(f"{from_user[9]}")
+                    button = types.KeyboardButton(f"{from_user['pubg_id']}")
                     markup_reply.add(button)
                     bot.reply_to(message, "Chek qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
