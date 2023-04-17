@@ -22,6 +22,11 @@ BOT_TOKEN = ("6080749671:AAEO_NOXWO6YQ_yHkt-YOQeertuNl1Kkq8Y")
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
+menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+menu_uc = types.KeyboardButton("Купить UC")
+menu_story = types.KeyboardButton("История операций")
+menu_language = types.KeyboardButton("Язык")
+menu.add(menu_uc).row(menu_story, menu_language)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -33,7 +38,7 @@ def send_welcome(message):
         full_name = message.from_user.last_name
     else:
         full_name = ' '
-    
+
     if connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -47,13 +52,34 @@ def send_welcome(message):
                     f"""INSERT INTO `users`(user_id, full_name, username) VALUES ({message.from_user.id}, '{full_name}', '{message.from_user.username}')"""
                 )
                 connection.commit()
-
-    markup_inline = types.InlineKeyboardMarkup()
-    item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
-    item_uz = types.InlineKeyboardButton(text="O'zbekcha 🇺🇿", callback_data="uz")
-    markup_inline.add(item_ru, item_uz)
+        else:
+            with connection.cursor() as cursor:
+                cursor.execute(f"""DELETE FROM `operations` WHERE status IS NULL and user_id = {check['id']};""")
+                connection.commit()
     bot.reply_to(message, "Добро пожаловать")
-    bot.send_message(message.chat.id, "Выберите язык:", reply_markup=markup_inline)
+    if check:
+        if check['language'] == 'ru':
+            markup_inline = types.InlineKeyboardMarkup()
+            item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
+            markup_inline.add(item_1)
+            bot.send_message(message.chat.id, "Выберите игру:", reply_markup=markup_inline)
+        elif check['language'] == 'uz':
+            markup_inline = types.InlineKeyboardMarkup()
+            item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
+            markup_inline.add(item_1)
+            bot.send_message(message.chat.id, "O'yinni tanlang:", reply_markup=markup_inline)
+        else:
+            markup_inline = types.InlineKeyboardMarkup()
+            item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
+            item_uz = types.InlineKeyboardButton(text="O'zbekcha 🇺🇿", callback_data="uz")
+            markup_inline.add(item_ru, item_uz)
+            bot.send_message(message.chat.id, "Выберите язык:", reply_markup=markup_inline)
+    else:
+        markup_inline = types.InlineKeyboardMarkup()
+        item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
+        item_uz = types.InlineKeyboardButton(text="O'zbekcha 🇺🇿", callback_data="uz")
+        markup_inline.add(item_ru, item_uz)
+        bot.send_message(message.chat.id, "Выберите язык:", reply_markup=markup_inline)
 
 
 @bot.callback_query_handler(func = lambda call: True)
@@ -63,51 +89,118 @@ def ansver(call):
             with connection.cursor() as cursor:
                 cursor.execute(f"""SELECT * from `users` WHERE user_id = {call.from_user.id}""")
                 from_user = cursor.fetchone()
-                
-            valyuta = from_user['currency']
+                cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and status is not null""")
+                operations = cursor.fetchall()
+                operation_num = len(operations)
+                cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num+1}""")
+                operation = cursor.fetchone()
+                cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num}""")
+                previous_operation = cursor.fetchone()
+            valyuta = operation['currency']
     except:
         valyuta = None  
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         if call.data == 'ru':
             bot.send_message(call.message.chat.id, "Язык применен !")
-        if call.data == 'uz':
+        elif call.data == 'uz':
             bot.send_message(call.message.chat.id, "Til qabul qilindi ! !")
-    else:
-        if call.data == 'uzs':
+        elif call.data.startswith("success_"):
+            opr_id = call.data
+            operation_id = opr_id[8:]
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE `users` SET currency = 'uzs' WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""SELECT * from `operations` WHERE id = {operation_id}""")
+                    uc_operation = cursor.fetchone()
+                if uc_operation['status'] == "progress":
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"""SELECT * from `users` WHERE id = {uc_operation['user_id']}""")
+                        uc_user = cursor.fetchone()
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"""UPDATE `operations` SET status = 'delivered' WHERE id = {operation_id}""")
+                        connection.commit()
+                    bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
+                    bot.send_message(uc_user["user_id"], f"Sizning{uc_operation['operation_id']} chi zakazingiz\n{uc_operation['uc']} UC\n{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nPUBG akkauntiga tushdi")
+                    bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" подтверждена")
+                elif uc_operation['status'] == "delivered":
+                    bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
+                else:
+                    bot.send_message(call.message.chat.id, "Эта операция уже отклонена")
+
+        elif call.data.startswith("reject_"):
+            opr_id = call.data
+            operation_id = opr_id[7:]
+            if connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""SELECT * from `operations` WHERE id = {operation_id}""")
+                    uc_operation = cursor.fetchone()
+                if uc_operation['status'] == "progress":
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"""SELECT * from `users` WHERE id = {uc_operation['user_id']}""")
+                        uc_user = cursor.fetchone()
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"""UPDATE `operations` SET status = 'rejected' WHERE id = {operation_id}""")
+                        connection.commit()
+                    bot.send_message(uc_user["user_id"], f"Sizning{uc_operation['operation_id']} chi zakazingiz\nformasi xato to'ldirilgan iltimos tekshirip qayta urinib ko'ring !")
+                    bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" отклонена")
+                elif uc_operation['status'] == "delivered":
+                    bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
+                else:
+                    bot.send_message(call.message.chat.id, "Эта операция уже отклонена")
+    else:
+        if call.data == "menu":
+            bot.send_message(call.message.chat.id, "Меню",reply_markup=menu)
+        elif call.data == 'uzs':
+            if connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""DELETE FROM `operations` WHERE status IS NULL and user_id = {from_user['id']};""")
+                    connection.commit()
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""INSERT INTO `operations` (user_id, operation_id, currency) VALUES ({from_user['id']},{operation_num+1}, 'uzs');""")
                     connection.commit()
         elif call.data == 'rub':
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE `users` SET currency = 'rub' WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""DELETE FROM `operations` WHERE status IS NULL and user_id = {from_user['id']};""")
+                    connection.commit()
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""INSERT INTO `operations` (user_id, operation_id, currency) VALUES ({from_user['id']},{operation_num+1}, 'rub');""")
                     connection.commit()
 
         tab_uc = False
         if call.data == 'ru':
-            lan = 'ru'
-            markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="valyuta")
-            markup_inline.add(item_1)
-            bot.send_message(call.message.chat.id, "Выберите игру:", reply_markup=markup_inline)
+            if connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""UPDATE `users` SET language = 'ru' WHERE user_id = {call.from_user.id}""")
+                    connection.commit()
+            if from_user['language']:
+                bot.send_message(call.message.chat.id, "Язык успешно изменен на русский")
+            else:
+                markup_inline = types.InlineKeyboardMarkup()
+                item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
+                markup_inline.add(item_1)
+                bot.send_message(call.message.chat.id, "Выберите игру:", reply_markup=markup_inline)
         elif call.data == 'uz':
-            lan = 'uz'
-            markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="valyuta")
-            markup_inline.add(item_1)
-            bot.send_message(call.message.chat.id, "O'yinni tanlang:", reply_markup=markup_inline)
-        elif call.data == 'valyuta':
-            markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="UZS", callback_data="uzs")
-            item_2 = types.InlineKeyboardButton(text="RUB", callback_data="rub")
-            markup_inline.add(item_1, item_2)
-            bot.send_message(call.message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
+            if connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"""UPDATE `users` SET language = 'uz' WHERE user_id = {call.from_user.id}""")
+                    connection.commit()
+            if from_user['language']:
+                bot.send_message(call.message.chat.id, "Язык успешно изменен на узбекский")
+            else:
+                markup_inline = types.InlineKeyboardMarkup()
+                item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
+                markup_inline.add(item_1)
+                bot.send_message(call.message.chat.id, "Выберите игру:", reply_markup=markup_inline)
         elif call.data == 'page_1' or call.data == 'uzs' or call.data == 'rub':
-            if valyuta == "uzs":
+            if call.data == "uzs":
                 tsena = "💎66 UC - 11.000 UZS 💵\n💎132 UC - 21.000 UZS 💵\n💎198 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
-            elif valyuta == 'rub':
+            elif call.data == 'rub':
                 tsena = "💎66 UC - 78₽💵\n💎132 UC - 150₽💵\n💎198 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
+            elif valyuta == "uzs":
+                tsena = "💎66 UC - 11.000 UZS 💵\n💎132 UC - 21.000 UZS 💵\n💎198 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
+            elif valyuta == "rub":
+                tsena = "💎66 UC - 78₽💵\n💎132 UC - 150₽💵\n💎198 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
+
             photo = open('photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="💎66 UC", callback_data="66")
@@ -171,17 +264,17 @@ def ansver(call):
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{from_user['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
         elif call.data == "humo":
             photo = open('humo_photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{from_user['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
         elif call.data == "opcheck":
-            if from_user['card']:
-                markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                button = types.KeyboardButton(f"{from_user['card']}")
+            if previous_operation:
+                markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
+                button = types.KeyboardButton(f"{previous_operation['card']}")
                 markup_reply.add(button)
                 bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
             else:
@@ -290,15 +383,15 @@ def ansver(call):
         if tab_uc:
             if connection:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"""UPDATE `users` SET uc = {uc} WHERE user_id = {call.from_user.id}""")
+                    cursor.execute(f"""UPDATE `operations` SET uc = {uc} WHERE id = {operation['id']};""")
                     connection.commit()
                 if valyuta == "uzs":
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE `users` SET price = '{uzs}' WHERE user_id = {call.from_user.id}""")
+                        cursor.execute(f"""UPDATE `operations` SET price = '{uzs}' WHERE id = {operation['id']};""")
                         connection.commit()
                 elif valyuta == "rub":
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE `users` SET price = '{rub}' WHERE user_id = {call.from_user.id}""")
+                        cursor.execute(f"""UPDATE `operations` SET price = '{rub}' WHERE id = {operation['id']};""")
                         connection.commit()
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Uzcard", callback_data="uzcard")
@@ -312,28 +405,47 @@ def get_text(message):
         with connection.cursor() as cursor:
             cursor.execute(f"""SELECT * from `users` WHERE user_id = {message.from_user.id}""")
             from_user = cursor.fetchone()
+            cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} AND status is not NULL""")
+            operations = cursor.fetchall()
+            operation_num = len(operations)
+            cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num+1}""")
+            operation = cursor.fetchone()
+            cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num}""")
+            previous_operation = cursor.fetchone()
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         pass
     else:
         if message.text:
-            if message.text.lower().startswith("card"):
-                if from_user['price']:
+            if message.text == "Купить UC":
+                markup_inline = types.InlineKeyboardMarkup()
+                item_1 = types.InlineKeyboardButton(text="UZS", callback_data="uzs")
+                item_2 = types.InlineKeyboardButton(text="RUB", callback_data="rub")
+                markup_inline.add(item_1, item_2)
+                bot.send_message(message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
+            elif message.text == "Язык":
+                markup_inline = types.InlineKeyboardMarkup()
+                item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
+                item_uz = types.InlineKeyboardButton(text="O'zbekcha 🇺🇿", callback_data="uz")
+                markup_inline.add(item_ru, item_uz)
+                bot.send_message(message.chat.id, "Выберите язык:", reply_markup=markup_inline)
+            elif message.text.lower().startswith("card"):
+                if operation['price']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE `users` SET card = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
+                            cursor.execute(f"""UPDATE `operations` SET card = '{message.text.upper()}' WHERE id = {operation['id']};""")
                             connection.commit()
                     bot.reply_to(message, "Karta raqami qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)", reply_markup=types.ReplyKeyboardRemove())
+                    bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)")
                     # bot.send_sticker(call.message.chat.id, "CAACAgIAAxkBAAEIjgxkNrfCbktyzaZpKSm6wAeBsV-1PgACVyUAAl9weEuXcuNPf9dm4i8E")
             elif message.text.lower().startswith("id"):
-                if from_user['photo_id']:
+                if operation['photo_id']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE `users` SET pubg_id = '{message.text.upper()}' WHERE user_id = {message.from_user.id}""")
+                            cursor.execute(f"""UPDATE `operations` SET pubg_id = '{message.text.upper()}' WHERE id = {operation['id']};""")
                             connection.commit()
-                    if from_user['nickname']:
-                        markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                        button = types.KeyboardButton(f"{from_user['nickname']}")
+                    if previous_operation:
+                        markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
+                        button = types.KeyboardButton(f"{previous_operation['nickname']}")
                         markup_reply.add(button)
                         bot.reply_to(message, "ID qabul qilindi ✅")
                         bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)", reply_markup=markup_reply)
@@ -341,41 +453,40 @@ def get_text(message):
                         bot.reply_to(message, "ID qabul qilindi ✅")
                         bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)")
             elif message.text.lower().startswith("nickname"):
-                if from_user['pubg_id']:
+                if operation['pubg_id']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE `users` SET nickname = '{message.text}' WHERE user_id = {message.from_user.id}""")
+                            cursor.execute(f"""UPDATE `operations` SET nickname = '{message.text}', status = 'progress' WHERE id = {operation['id']};""")
                             connection.commit()
                         with connection.cursor() as cursor:
                             cursor.execute(f"""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
                             admins = cursor.fetchall()
                     bot.reply_to(message, "Nickname qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=types.ReplyKeyboardRemove())
+                    bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=menu)
                     markup_inline = types.InlineKeyboardMarkup()
-                    item = types.InlineKeyboardButton(text="Подтвердить ✅", callback_data=f"{message.from_user.id}")
-                    markup_inline.add(item)
-                    photo_file = bot.get_file(from_user['photo_id'])
+                    item = types.InlineKeyboardButton(text="Подтвердить", callback_data=f"success_{operation['id']}")
+                    item2 = types.InlineKeyboardButton(text="Отклонить", callback_data=f"reject_{operation['id']}")
+                    markup_inline.add(item2, item)
+                    photo_file = bot.get_file(operation['photo_id'])
                     photo_bytes = bot.download_file(photo_file.file_path)
                     for admin in admins:
-                        bot.send_photo(admin['user_id'], photo_bytes, f"{from_user['card']}\n{from_user['pubg_id']}\nUC: {from_user['uc']}\nPRICE: {from_user['price']}\n{from_user['nickname']}\n@{from_user['username']}", reply_markup=markup_inline)
+                        bot.send_photo(admin['user_id'], photo_bytes, f"{operation['card']}\n{operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\n{message.text}\n@{from_user['username']}", reply_markup=markup_inline)
         elif message.photo:
-            if from_user['card']:
+            if operation['card']:
                 photo_id = message.photo[-1].file_id
                 if connection:
                     with connection.cursor() as cursor:
-                        cursor.execute(f"""UPDATE `users` SET photo_id = '{photo_id}' WHERE user_id = {message.from_user.id}""")
+                        cursor.execute(f"""UPDATE `operations` SET photo_id = '{photo_id}' WHERE id = {operation['id']};""")
                         connection.commit()
-                if from_user['pubg_id']:
-                    markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
-                    button = types.KeyboardButton(f"{from_user['pubg_id']}")
+                if previous_operation:
+                    markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
+                    button = types.KeyboardButton(f"{previous_operation['pubg_id']}")
                     markup_reply.add(button)
                     bot.reply_to(message, "Chek qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
                 else:
                     bot.reply_to(message, "Chek qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)")
-
-                
-        
-
+            
+    
 bot.infinity_polling()
