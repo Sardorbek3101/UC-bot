@@ -134,7 +134,7 @@ def ansver(call):
                     with connection.cursor() as cursor:
                         cursor.execute(f"""UPDATE `operations` SET status = 'delivered' WHERE id = {operation_id}""")
                         connection.commit()
-                    bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
+                    # bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
                     if uc_user['language'] == "uz":
                         bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nTushdi ✅")
                     elif uc_user['language'] == "ru":
@@ -212,21 +212,21 @@ def ansver(call):
                 bot.send_message(call.message.chat.id, "Выберите игру:", reply_markup=markup_inline)
         elif call.data == 'page_1' or call.data == 'uzs' or call.data == 'rub':
             if call.data == "uzs":
-                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
+                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎415 UC - 62.000 UZS 💵"
             elif call.data == 'rub':
                 tsena = "💎60 UC - 78₽💵\n💎120 UC - 150₽💵\n💎180 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
             elif valyuta == "uzs":
-                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
+                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎415 UC - 62.000 UZS 💵"
             elif valyuta == "rub":
                 tsena = "💎60 UC - 78₽💵\n💎120 UC - 150₽💵\n💎180 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
 
             photo = open('photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="💎60 UC", callback_data="66")
-            item_2 = types.InlineKeyboardButton(text="💎120 UC", callback_data="132")
-            item_3 = types.InlineKeyboardButton(text="💎180 UC", callback_data="198")
+            item_1 = types.InlineKeyboardButton(text="💎60 UC", callback_data="60")
+            item_2 = types.InlineKeyboardButton(text="💎120 UC", callback_data="120")
+            item_3 = types.InlineKeyboardButton(text="💎180 UC", callback_data="180")
             item_4 = types.InlineKeyboardButton(text="💎355 UC", callback_data="355")
-            item_5 = types.InlineKeyboardButton(text="💎420 UC", callback_data="420")
+            item_5 = types.InlineKeyboardButton(text="💎415 UC", callback_data="415")
             if from_user['language'] == "uz": 
                 item_6 = types.InlineKeyboardButton(text="⬅️Orqaga", callback_data="valyuta")
                 item_7 = types.InlineKeyboardButton(text="Keyingi sahifa➡️", callback_data="page_2")
@@ -263,7 +263,7 @@ def ansver(call):
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == 'page_3':
             if valyuta == "uzs":
-                tsena = "💎1440 UC - 210.000 UZS 💵\n💎1950 UC - 259.000 UZS 💵\n💎2305 UC - 310.000 UZS 💵\n💎3025 UC - 400.000 UZS 💵\n💎4000 UC - 490.000 UZS 💵"
+                tsena = "💎1440 UC - 210.000 UZS 💵\n💎1950 UC - 250.000 UZS 💵\n💎2305 UC - 300.000 UZS 💵\n💎3025 UC - 400.000 UZS 💵\n💎4000 UC - 490.000 UZS 💵"
             elif valyuta == "rub":
                 tsena = "💎1440 UC - 1500₽💵\n💎1950 UC - 1850₽💵\n💎2305 UC - 2222₽💵\n💎3025 UC - 2860₽💵\n💎4000 UC - 3560₽💵"
             photo = open('photo.jpg', 'rb')
@@ -286,7 +286,7 @@ def ansver(call):
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == 'page_4':
             if valyuta == "uzs":
-                tsena = "💎5075 UC - 625.000 UZS 💵\n💎8400 UC - 969.000 UZS 💵\n💎10350 UC - 1.228.000 UZS 💵\n💎16800 UC - 1.938.000 UZS 💵\n💎25200 UC - 2.790.000 UZS 💵"
+                tsena = "💎5075 UC - 625.000 UZS 💵\n💎8400 UC - 960.000 UZS 💵\n💎10350 UC - 1.228.000 UZS 💵\n💎16800 UC - 1.938.000 UZS 💵\n💎25200 UC - 2.790.000 UZS 💵"
             elif valyuta == "rub":
                 tsena = "💎5075 UC - 4500₽💵\n💎8400 UC - 6925₽💵\n💎10350 UC - 8787₽💵\n💎16800 UC - 13850₽💵\n💎25200 UC - 19375₽💵"
             photo = open('photo.jpg', 'rb')
@@ -338,7 +338,7 @@ def ansver(call):
                 if from_user['language'] == "uz":
                     bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
                 elif from_user['language'] == "ru":
-                    bot.send_message(call.message.chat.id, "После оплаты киньте номер карты :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
+                    bot.send_message(call.message.chat.id, "Отправьте карту с которого оплатили :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
             else:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
                 button = types.KeyboardButton("Меню")
@@ -346,19 +346,19 @@ def ansver(call):
                 if from_user['language'] == "uz":
                     bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
                 elif from_user['language'] == "ru":
-                    bot.send_message(call.message.chat.id, "После оплаты киньте номер карты :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
-        elif call.data == '66':
-            uc = 66
+                    bot.send_message(call.message.chat.id, "Отправьте карту с которого оплатили :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
+        elif call.data == '60':
+            uc = 60
             uzs = "11.000 UZS"
             rub = "78 RUB"
             tab_uc = True
-        elif call.data == '132':
-            uc = 132
+        elif call.data == '120':
+            uc = 120
             uzs = "21.000 UZS"
             rub = "150 RUB"
             tab_uc = True
-        elif call.data == '198':
-            uc = 198
+        elif call.data == '180':
+            uc = 180
             uzs = "30.000 UZS"
             rub = "364 RUB"
             tab_uc = True
@@ -367,8 +367,8 @@ def ansver(call):
             uzs = "51.000 UZS"
             rub = "364 RUB"
             tab_uc = True
-        elif call.data == '420':
-            uc = 420
+        elif call.data == '415':
+            uc = 415
             uzs = "62.000 UZS"
             rub = "445 RUB"
             tab_uc = True
@@ -404,12 +404,12 @@ def ansver(call):
             tab_uc = True
         elif call.data == '1950':
             uc = 1950
-            uzs = "259.000 UZS"
+            uzs = "250.000 UZS"
             rub = "1850 RUB"
             tab_uc = True
         elif call.data == '2305':
             uc = 2305
-            uzs = "310.000 UZS"
+            uzs = "300.000 UZS"
             rub = "2222 RUB"
             tab_uc = True
         elif call.data == '3025':
@@ -429,7 +429,7 @@ def ansver(call):
             tab_uc = True
         elif call.data == '8400':
             uc = 8400
-            uzs = "969.000 UZS"
+            uzs = "960.000 UZS"
             rub = "6925 RUB"
             tab_uc = True
         elif call.data == '10350':
