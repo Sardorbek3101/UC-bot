@@ -53,7 +53,9 @@ def send_welcome(message):
                 connection.commit()
     bot.reply_to(message, "Добро пожаловать")
     if check:
-        if check['language'] == 'ru':
+        if check['status'] == "admin" or check['status'] == "superadmin":
+            pass
+        elif check['language'] == 'ru':
             markup_inline = types.InlineKeyboardMarkup()
             item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
             markup_inline.add(item_1)
@@ -63,8 +65,6 @@ def send_welcome(message):
             item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
             markup_inline.add(item_1)
             bot.send_message(message.chat.id, "O'yinni tanlang:", reply_markup=markup_inline)
-        elif check['status'] == "admin" or check['status'] == "superadmin":
-            pass
         else:
             markup_inline = types.InlineKeyboardMarkup()
             item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
@@ -96,25 +96,6 @@ def ansver(call):
             valyuta = operation['currency']
     except:
         valyuta = None
-    if from_user['status'] == "active":
-        menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
-        if call.data == "uz":
-            menu_uc = types.KeyboardButton("UC sotib olish")
-            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
-            menu_language = types.KeyboardButton("Tilni o'zgartirish")
-        elif call.data == "ru":
-            menu_uc = types.KeyboardButton("Купить UC")
-            menu_story = types.KeyboardButton("История операций")
-            menu_language = types.KeyboardButton("Язык")
-        elif from_user['language'] == "uz":
-            menu_uc = types.KeyboardButton("UC sotib olish")
-            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
-            menu_language = types.KeyboardButton("Tilni o'zgartirish")
-        elif from_user['language'] == "ru":
-            menu_uc = types.KeyboardButton("Купить UC")
-            menu_story = types.KeyboardButton("История операций")
-            menu_language = types.KeyboardButton("Язык")
-        menu.add(menu_uc).row(menu_story, menu_language)
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         if call.data == 'ru':
             bot.send_message(call.message.chat.id, "Язык применен !", reply_markup=types.ReplyKeyboardRemove())
@@ -166,6 +147,30 @@ def ansver(call):
                 else:
                     bot.send_message(call.message.chat.id, "Эта операция уже отклонена")
     else:
+        if call.data == "uz":
+            menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+            menu_uc = types.KeyboardButton("UC sotib olish")
+            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
+            menu_language = types.KeyboardButton("Tilni o'zgartirish")
+            menu.add(menu_uc).row(menu_story, menu_language)
+        elif call.data == "ru":
+            menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+            menu_uc = types.KeyboardButton("Купить UC")
+            menu_story = types.KeyboardButton("История операций")
+            menu_language = types.KeyboardButton("Язык")
+            menu.add(menu_uc).row(menu_story, menu_language)
+        elif from_user['language'] == "uz":
+            menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+            menu_uc = types.KeyboardButton("UC sotib olish")
+            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
+            menu_language = types.KeyboardButton("Tilni o'zgartirish")
+            menu.add(menu_uc).row(menu_story, menu_language)
+        elif from_user['language'] == "ru":
+            menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+            menu_uc = types.KeyboardButton("Купить UC")
+            menu_story = types.KeyboardButton("История операций")
+            menu_language = types.KeyboardButton("Язык")
+            menu.add(menu_uc).row(menu_story, menu_language)
         if call.data == "menu":
             bot.send_message(call.message.chat.id, "Меню",reply_markup=menu)
         elif call.data == 'uzs':
@@ -483,16 +488,18 @@ def get_text(message):
             operation = cursor.fetchone()
             cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num}""")
             previous_operation = cursor.fetchone()
-    menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
     if from_user['language'] == "uz":
+        menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
         menu_uc = types.KeyboardButton("UC sotib olish")
         menu_story = types.KeyboardButton("Buyurtmalar tarixi")
         menu_language = types.KeyboardButton("Tilni o'zgartirish")
+        menu.add(menu_uc).row(menu_story, menu_language)
     elif from_user['language'] == "ru":
+        menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
         menu_uc = types.KeyboardButton("Купить UC")
         menu_story = types.KeyboardButton("История операций")
         menu_language = types.KeyboardButton("Язык")
-    menu.add(menu_uc).row(menu_story, menu_language)
+        menu.add(menu_uc).row(menu_story, menu_language)
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         pass
     else:
@@ -564,7 +571,7 @@ def get_text(message):
                             connection.commit()
                     if previous_operation:
                         markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
-                        button = types.KeyboardButton(f"NICK {previous_operation['nickname']}")
+                        button = types.KeyboardButton(f"NICK{previous_operation['nickname']}")
                         button2 = types.KeyboardButton("Меню")
                         markup_reply.add(button).row(button2)
                         if from_user['language'] == "uz":
