@@ -119,7 +119,7 @@ def ansver(call):
                         cursor.execute(f"""UPDATE `operations` SET status = 'delivered' WHERE id = {operation_id}""")
                         connection.commit()
                     bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
-                    bot.send_message(uc_user["user_id"], f"Sizning{uc_operation['operation_id']} chi zakazingiz\n{uc_operation['uc']} UC\n{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nPUBG akkauntiga tushdi")
+                    bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nTushdi ✅")
                     bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" подтверждена")
                 elif uc_operation['status'] == "delivered":
                     bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
@@ -140,7 +140,7 @@ def ansver(call):
                     with connection.cursor() as cursor:
                         cursor.execute(f"""UPDATE `operations` SET status = 'rejected' WHERE id = {operation_id}""")
                         connection.commit()
-                    bot.send_message(uc_user["user_id"], f"Sizning{uc_operation['operation_id']} chi zakazingiz\nformasi xato to'ldirilgan iltimos tekshirip qayta urinib ko'ring !")
+                    bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\nFormasi xato to'ldirilgan iltimos tekshirip qayta urinib ko'ring !")
                     bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" отклонена")
                 elif uc_operation['status'] == "delivered":
                     bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
@@ -275,10 +275,14 @@ def ansver(call):
             if previous_operation:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
                 button = types.KeyboardButton(f"{previous_operation['card']}")
-                markup_reply.add(button)
+                button2 = types.KeyboardButton("Меню")
+                markup_reply.add(button).row(button2)
                 bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
             else:
-                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)")
+                markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
+                button = types.KeyboardButton("Меню")
+                markup_reply.add("Меню")
+                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
         elif call.data == '66':
             uc = 66
             uzs = "11.000 UZS"
@@ -416,12 +420,29 @@ def get_text(message):
         pass
     else:
         if message.text:
-            if message.text == "Купить UC":
+            if message.text == "Меню":
+                bot.send_message(message.chat.id, "Меню",reply_markup=menu)
+            elif message.text == "Купить UC":
                 markup_inline = types.InlineKeyboardMarkup()
                 item_1 = types.InlineKeyboardButton(text="UZS", callback_data="uzs")
                 item_2 = types.InlineKeyboardButton(text="RUB", callback_data="rub")
                 markup_inline.add(item_1, item_2)
                 bot.send_message(message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
+            elif message.text == "История операций":
+                story = ""
+                for opr in operations:
+                    if opr['status']:
+                        if opr['status'] == "progress":
+                            opr_status = "В процессее"
+                        elif opr['status'] == "rejected":
+                            opr_status = "Отклонено"
+                        elif opr['status'] == "delivered":
+                            opr_status = "Подтверждено"
+                        story += f"\nЗаказ #{opr['operation_id']}\nЦена: {opr['price']}\nТовар: {opr['uc']} UC\nКарта:{opr['card'][4:]}\n{opr['pubg_id']}\nNICK:{opr['nickname']}\nСтатус: {opr_status}\n"
+                if story:
+                    bot.send_message(message.chat.id, story)
+                else:
+                    bot.send_message(message.chat.id, "Вы ещё не совершили не одной операции")
             elif message.text == "Язык":
                 markup_inline = types.InlineKeyboardMarkup()
                 item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
@@ -434,8 +455,11 @@ def get_text(message):
                         with connection.cursor() as cursor:
                             cursor.execute(f"""UPDATE `operations` SET card = '{message.text.upper()}' WHERE id = {operation['id']};""")
                             connection.commit()
+                    markup_reply = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                    button = types.KeyboardButton("Меню")
+                    markup_reply.add(button)
                     bot.reply_to(message, "Karta raqami qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)")
+                    bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)", reply_markup=markup_reply)
                     # bot.send_sticker(call.message.chat.id, "CAACAgIAAxkBAAEIjgxkNrfCbktyzaZpKSm6wAeBsV-1PgACVyUAAl9weEuXcuNPf9dm4i8E")
             elif message.text.lower().startswith("id"):
                 if operation['photo_id']:
@@ -445,18 +469,22 @@ def get_text(message):
                             connection.commit()
                     if previous_operation:
                         markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
-                        button = types.KeyboardButton(f"{previous_operation['nickname']}")
-                        markup_reply.add(button)
+                        button = types.KeyboardButton(f"NICK {previous_operation['nickname']}")
+                        button2 = types.KeyboardButton("Меню")
+                        markup_reply.add(button).row(button2)
                         bot.reply_to(message, "ID qabul qilindi ✅")
-                        bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                        bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nick alyosha123\n\n(Boshida \"nick\" suzi bo'lishi shart)", reply_markup=markup_reply)
                     else:
+                        markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
+                        button = types.KeyboardButton("Меню")
+                        markup_reply.add("Меню")
                         bot.reply_to(message, "ID qabul qilindi ✅")
-                        bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nickname alyosha123\n\n(Boshida \"nickname\" suzi bo'lishi shart)")
-            elif message.text.lower().startswith("nickname"):
+                        bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nick alyosha123\n\n(Boshida \"nick\" suzi bo'lishi shart)", reply_markup=markup_reply)
+            elif message.text.lower().startswith("nick"):
                 if operation['pubg_id']:
                     if connection:
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""UPDATE `operations` SET nickname = '{message.text}', status = 'progress' WHERE id = {operation['id']};""")
+                            cursor.execute(f"""UPDATE `operations` SET nickname = '{message.text[4:]}', status = 'progress' WHERE id = {operation['id']};""")
                             connection.commit()
                         with connection.cursor() as cursor:
                             cursor.execute(f"""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
@@ -470,7 +498,7 @@ def get_text(message):
                     photo_file = bot.get_file(operation['photo_id'])
                     photo_bytes = bot.download_file(photo_file.file_path)
                     for admin in admins:
-                        bot.send_photo(admin['user_id'], photo_bytes, f"{operation['card']}\n{operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\n{message.text}\n@{from_user['username']}", reply_markup=markup_inline)
+                        bot.send_photo(admin['user_id'], photo_bytes, f"{operation['card']}\n{operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\nNICK:{message.text[4:]}\n@{from_user['username']}", reply_markup=markup_inline)
         elif message.photo:
             if operation['card']:
                 photo_id = message.photo[-1].file_id
@@ -481,12 +509,16 @@ def get_text(message):
                 if previous_operation:
                     markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
                     button = types.KeyboardButton(f"{previous_operation['pubg_id']}")
-                    markup_reply.add(button)
+                    button2 = types.KeyboardButton("Меню")
+                    markup_reply.add(button).row(button2)
                     bot.reply_to(message, "Chek qabul qilindi ✅")
                     bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
                 else:
+                    markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
+                    button = types.KeyboardButton("Меню")
+                    markup_reply.add("Меню")
                     bot.reply_to(message, "Chek qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)")
+                    bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
             
     
 bot.infinity_polling()
