@@ -22,11 +22,6 @@ BOT_TOKEN = ("6080749671:AAEO_NOXWO6YQ_yHkt-YOQeertuNl1Kkq8Y")
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
-menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
-menu_uc = types.KeyboardButton("Купить UC")
-menu_story = types.KeyboardButton("История операций")
-menu_language = types.KeyboardButton("Язык")
-menu.add(menu_uc).row(menu_story, menu_language)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -68,6 +63,8 @@ def send_welcome(message):
             item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
             markup_inline.add(item_1)
             bot.send_message(message.chat.id, "O'yinni tanlang:", reply_markup=markup_inline)
+        elif check['status'] == "admin" or check['status'] == "superadmin":
+            pass
         else:
             markup_inline = types.InlineKeyboardMarkup()
             item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
@@ -98,12 +95,31 @@ def ansver(call):
                 previous_operation = cursor.fetchone()
             valyuta = operation['currency']
     except:
-        valyuta = None  
+        valyuta = None
+    if from_user['status'] == "active":
+        menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+        if call.data == "uz":
+            menu_uc = types.KeyboardButton("UC sotib olish")
+            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
+            menu_language = types.KeyboardButton("Tilni o'zgartirish")
+        elif call.data == "ru":
+            menu_uc = types.KeyboardButton("Купить UC")
+            menu_story = types.KeyboardButton("История операций")
+            menu_language = types.KeyboardButton("Язык")
+        elif from_user['language'] == "uz":
+            menu_uc = types.KeyboardButton("UC sotib olish")
+            menu_story = types.KeyboardButton("Buyurtmalar tarixi")
+            menu_language = types.KeyboardButton("Tilni o'zgartirish")
+        elif from_user['language'] == "ru":
+            menu_uc = types.KeyboardButton("Купить UC")
+            menu_story = types.KeyboardButton("История операций")
+            menu_language = types.KeyboardButton("Язык")
+        menu.add(menu_uc).row(menu_story, menu_language)
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         if call.data == 'ru':
-            bot.send_message(call.message.chat.id, "Язык применен !")
+            bot.send_message(call.message.chat.id, "Язык применен !", reply_markup=types.ReplyKeyboardRemove())
         elif call.data == 'uz':
-            bot.send_message(call.message.chat.id, "Til qabul qilindi ! !")
+            bot.send_message(call.message.chat.id, "Til qabul qilindi !", reply_markup=types.ReplyKeyboardRemove())
         elif call.data.startswith("success_"):
             opr_id = call.data
             operation_id = opr_id[8:]
@@ -119,7 +135,10 @@ def ansver(call):
                         cursor.execute(f"""UPDATE `operations` SET status = 'delivered' WHERE id = {operation_id}""")
                         connection.commit()
                     bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
-                    bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nTushdi ✅")
+                    if uc_user['language'] == "uz":
+                        bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nTushdi ✅")
+                    elif uc_user['language'] == "ru":
+                        bot.send_message(uc_user["user_id"], f"Заказ #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\n{uc_operation['pubg_id']}\nПоступили ✅")
                     bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" подтверждена")
                 elif uc_operation['status'] == "delivered":
                     bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
@@ -173,7 +192,7 @@ def ansver(call):
                     cursor.execute(f"""UPDATE `users` SET language = 'ru' WHERE user_id = {call.from_user.id}""")
                     connection.commit()
             if from_user['language']:
-                bot.send_message(call.message.chat.id, "Язык успешно изменен на русский")
+                bot.send_message(call.message.chat.id, "Язык успешно изменен на русский", reply_markup=menu)
             else:
                 markup_inline = types.InlineKeyboardMarkup()
                 item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
@@ -185,7 +204,7 @@ def ansver(call):
                     cursor.execute(f"""UPDATE `users` SET language = 'uz' WHERE user_id = {call.from_user.id}""")
                     connection.commit()
             if from_user['language']:
-                bot.send_message(call.message.chat.id, "Язык успешно изменен на узбекский")
+                bot.send_message(call.message.chat.id, "Til o'zbek tiliga muvaffaqiyatli o'zgartirildi", reply_markup=menu)
             else:
                 markup_inline = types.InlineKeyboardMarkup()
                 item_1 = types.InlineKeyboardButton(text="Pubg Mobile", callback_data="menu")
@@ -193,25 +212,32 @@ def ansver(call):
                 bot.send_message(call.message.chat.id, "Выберите игру:", reply_markup=markup_inline)
         elif call.data == 'page_1' or call.data == 'uzs' or call.data == 'rub':
             if call.data == "uzs":
-                tsena = "💎66 UC - 11.000 UZS 💵\n💎132 UC - 21.000 UZS 💵\n💎198 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
+                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
             elif call.data == 'rub':
-                tsena = "💎66 UC - 78₽💵\n💎132 UC - 150₽💵\n💎198 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
+                tsena = "💎60 UC - 78₽💵\n💎120 UC - 150₽💵\n💎180 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
             elif valyuta == "uzs":
-                tsena = "💎66 UC - 11.000 UZS 💵\n💎132 UC - 21.000 UZS 💵\n💎198 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
+                tsena = "💎60 UC - 11.000 UZS 💵\n💎120 UC - 21.000 UZS 💵\n💎180 UC - 30.000 UZS 💵\n💎355 UC - 51.000 UZS 💵\n💎420 UC - 62.000 UZS 💵"
             elif valyuta == "rub":
-                tsena = "💎66 UC - 78₽💵\n💎132 UC - 150₽💵\n💎198 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
+                tsena = "💎60 UC - 78₽💵\n💎120 UC - 150₽💵\n💎180 UC - 214₽💵\n💎355 UC - 364₽💵\n💎420 UC - 445₽💵"
 
             photo = open('photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="💎66 UC", callback_data="66")
-            item_2 = types.InlineKeyboardButton(text="💎132 UC", callback_data="132")
-            item_3 = types.InlineKeyboardButton(text="💎198 UC", callback_data="198")
+            item_1 = types.InlineKeyboardButton(text="💎60 UC", callback_data="66")
+            item_2 = types.InlineKeyboardButton(text="💎120 UC", callback_data="132")
+            item_3 = types.InlineKeyboardButton(text="💎180 UC", callback_data="198")
             item_4 = types.InlineKeyboardButton(text="💎355 UC", callback_data="355")
             item_5 = types.InlineKeyboardButton(text="💎420 UC", callback_data="420")
-            item_6 = types.InlineKeyboardButton(text="<< Orqaga", callback_data="valyuta")
-            item_7 = types.InlineKeyboardButton(text="Keyingi sahifa >>", callback_data="page_2")
+            if from_user['language'] == "uz": 
+                item_6 = types.InlineKeyboardButton(text="⬅️Orqaga", callback_data="valyuta")
+                item_7 = types.InlineKeyboardButton(text="Keyingi sahifa➡️", callback_data="page_2")
+            elif from_user['language'] == "ru":
+                item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="valyuta")
+                item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_2")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
-            bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            if from_user['language'] == "uz": 
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == 'page_2':
             if valyuta == "uzs":
                 tsena = "💎535 UC - 81.000 UZS 💵\n💎720 UC - 105.000 UZS 💵\n💎810 UC - 122.000 UZS 💵\n💎900 UC - 135.000 UZS 💵\n💎1075 UC - 156.000 UZS 💵"
@@ -224,10 +250,17 @@ def ansver(call):
             item_3 = types.InlineKeyboardButton(text="💎810 UC", callback_data="810")
             item_4 = types.InlineKeyboardButton(text="💎900 UC", callback_data="900")
             item_5 = types.InlineKeyboardButton(text="💎1075 UC", callback_data="1075")
-            item_6 = types.InlineKeyboardButton(text="<< Orqaga", callback_data="page_1")
-            item_7 = types.InlineKeyboardButton(text="Keyingi sahifa >>", callback_data="page_3")
+            if from_user['language'] == "uz": 
+                item_6 = types.InlineKeyboardButton(text="⬅️Orqaga", callback_data="page_1")
+                item_7 = types.InlineKeyboardButton(text="Keyingi sahifa➡️", callback_data="page_3")
+            elif from_user['language'] == "ru":
+                item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="page_1")
+                item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_3")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
-            bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            if from_user['language'] == "uz": 
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == 'page_3':
             if valyuta == "uzs":
                 tsena = "💎1440 UC - 210.000 UZS 💵\n💎1950 UC - 259.000 UZS 💵\n💎2305 UC - 310.000 UZS 💵\n💎3025 UC - 400.000 UZS 💵\n💎4000 UC - 490.000 UZS 💵"
@@ -240,10 +273,17 @@ def ansver(call):
             item_3 = types.InlineKeyboardButton(text="💎2305 UC", callback_data="2305")
             item_4 = types.InlineKeyboardButton(text="💎3025 UC", callback_data="3025")
             item_5 = types.InlineKeyboardButton(text="💎4000 UC", callback_data="4000")
-            item_6 = types.InlineKeyboardButton(text="<< Orqaga", callback_data="page_2")
-            item_7 = types.InlineKeyboardButton(text="Keyingi sahifa >>", callback_data="page_4")
+            if from_user['language'] == "uz": 
+                item_6 = types.InlineKeyboardButton(text="⬅️Orqaga", callback_data="page_2")
+                item_7 = types.InlineKeyboardButton(text="Keyingi sahifa➡️", callback_data="page_4")
+            elif from_user['language'] == "ru":
+                item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="page_2")
+                item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_4")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
-            bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            if from_user['language'] == "uz": 
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == 'page_4':
             if valyuta == "uzs":
                 tsena = "💎5075 UC - 625.000 UZS 💵\n💎8400 UC - 969.000 UZS 💵\n💎10350 UC - 1.228.000 UZS 💵\n💎16800 UC - 1.938.000 UZS 💵\n💎25200 UC - 2.790.000 UZS 💵"
@@ -256,33 +296,57 @@ def ansver(call):
             item_3 = types.InlineKeyboardButton(text="💎10350 UC", callback_data="10350")
             item_4 = types.InlineKeyboardButton(text="💎16800 UC", callback_data="16800")
             item_5 = types.InlineKeyboardButton(text="💎25200 UC", callback_data="25200")
-            item_6 = types.InlineKeyboardButton(text="<< Orqaga", callback_data="page_3")
+            if from_user['language'] == "uz": 
+                item_6 = types.InlineKeyboardButton(text="⬅️Orqaga", callback_data="page_3")
+            elif from_user['language'] == "ru":
+                item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="page_3")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6)
-            bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            if from_user['language'] == "uz": 
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
         elif call.data == "uzcard":
             photo = open('uzcard_photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
+            if from_user['language'] == "uz": 
+                item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
+            elif from_user['language'] == "ru":
+                item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            if from_user['language'] == "uz": 
+                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nПривязанный номер +998933127053", reply_markup=markup_inline)
         elif call.data == "humo":
             photo = open('humo_photo.jpg', 'rb')
             markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
+            if from_user['language'] == "uz": 
+                item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
+            elif from_user['language'] == "ru":
+                item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
             markup_inline.add(item_1)
-            bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            if from_user['language'] == "uz":
+                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nПривязанный номер +998933127053", reply_markup=markup_inline)
         elif call.data == "opcheck":
             if previous_operation:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
                 button = types.KeyboardButton(f"{previous_operation['card']}")
                 button2 = types.KeyboardButton("Меню")
                 markup_reply.add(button).row(button2)
-                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                if from_user['language'] == "uz":
+                    bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                elif from_user['language'] == "ru":
+                    bot.send_message(call.message.chat.id, "После оплаты киньте номер карты :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
             else:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
                 button = types.KeyboardButton("Меню")
                 markup_reply.add("Меню")
-                bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                if from_user['language'] == "uz":
+                    bot.send_message(call.message.chat.id, "To'lov qilgan karta raqamini yuboring :\n\nMasalan: card 0000 0000 0000 0000\n\n(Boshida \"card\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                elif from_user['language'] == "ru":
+                    bot.send_message(call.message.chat.id, "После оплаты киньте номер карты :\n\nНапример: card 0000 0000 0000 0000\n\n(В начале \"card\" обьзательно)", reply_markup=markup_reply)
         elif call.data == '66':
             uc = 66
             uzs = "11.000 UZS"
@@ -401,7 +465,10 @@ def ansver(call):
             item_1 = types.InlineKeyboardButton(text="Uzcard", callback_data="uzcard")
             item_2 = types.InlineKeyboardButton(text="Humo", callback_data="humo")
             markup_inline.add(item_1, item_2)
-            bot.send_message(call.message.chat.id, "Выберите способ оплаты:", reply_markup=markup_inline)
+            if from_user['language'] == "ru":
+                bot.send_message(call.message.chat.id, "Выберите способ оплаты:", reply_markup=markup_inline)
+            elif from_user['language'] == "uz":
+                bot.send_message(call.message.chat.id, "To'lov usulini tanlang:", reply_markup=markup_inline)
 
 @bot.message_handler(content_types=['text', 'photo'])
 def get_text(message):
@@ -416,34 +483,59 @@ def get_text(message):
             operation = cursor.fetchone()
             cursor.execute(f"""SELECT * from `operations` WHERE user_id = {from_user['id']} and operation_id = {operation_num}""")
             previous_operation = cursor.fetchone()
+    menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
+    if from_user['language'] == "uz":
+        menu_uc = types.KeyboardButton("UC sotib olish")
+        menu_story = types.KeyboardButton("Buyurtmalar tarixi")
+        menu_language = types.KeyboardButton("Tilni o'zgartirish")
+    elif from_user['language'] == "ru":
+        menu_uc = types.KeyboardButton("Купить UC")
+        menu_story = types.KeyboardButton("История операций")
+        menu_language = types.KeyboardButton("Язык")
+    menu.add(menu_uc).row(menu_story, menu_language)
     if from_user['status'] == 'superadmin' or from_user['status'] == 'admin':
         pass
     else:
         if message.text:
             if message.text == "Меню":
                 bot.send_message(message.chat.id, "Меню",reply_markup=menu)
-            elif message.text == "Купить UC":
+            elif message.text == "Купить UC" or message.text == "UC sotib olish":
                 markup_inline = types.InlineKeyboardMarkup()
                 item_1 = types.InlineKeyboardButton(text="UZS", callback_data="uzs")
                 item_2 = types.InlineKeyboardButton(text="RUB", callback_data="rub")
                 markup_inline.add(item_1, item_2)
-                bot.send_message(message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
-            elif message.text == "История операций":
+                if from_user['language'] == "uz":
+                    bot.send_message(message.chat.id, "Valyutani tanlang:", reply_markup=markup_inline)
+                elif from_user['language'] == "ru":
+                    bot.send_message(message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
+            elif message.text == "История операций" or message.text == "Buyurtmalar tarixi":
                 story = ""
                 for opr in operations:
                     if opr['status']:
-                        if opr['status'] == "progress":
-                            opr_status = "В процессее"
-                        elif opr['status'] == "rejected":
-                            opr_status = "Отклонено"
-                        elif opr['status'] == "delivered":
-                            opr_status = "Подтверждено"
-                        story += f"\nЗаказ #{opr['operation_id']}\nЦена: {opr['price']}\nТовар: {opr['uc']} UC\nКарта:{opr['card'][4:]}\n{opr['pubg_id']}\nNICK:{opr['nickname']}\nСтатус: {opr_status}\n"
+                        if from_user['language'] == "ru":
+                            if opr['status'] == "progress":
+                                opr_status = "В процессее ⏳"
+                            elif opr['status'] == "rejected":
+                                opr_status = "Отклонено ❌"
+                            elif opr['status'] == "delivered":
+                                opr_status = "Подтверждено ✅"
+                            story += f"\nЗаказ #{opr['operation_id']}\nЦена: {opr['price']}\nТовар: {opr['uc']} UC\nКарта:{opr['card'][4:]}\n{opr['pubg_id']}\nNICK:{opr['nickname']}\nСтатус: {opr_status}\n"
+                        elif from_user['language'] == "uz":
+                            if opr['status'] == "progress":
+                                opr_status = "Jarayonda ⏳"
+                            elif opr['status'] == "rejected":
+                                opr_status = "Rad etilgan ❌"
+                            elif opr['status'] == "delivered":
+                                opr_status = "Tasdiqlangan ✅"
+                            story += f"\nBuyurtma #{opr['operation_id']}\nNarxi: {opr['price']}\nMahsulot: {opr['uc']} UC\nKarta:{opr['card'][4:]}\n{opr['pubg_id']}\nNICK:{opr['nickname']}\nHolat: {opr_status}\n"
                 if story:
                     bot.send_message(message.chat.id, story)
                 else:
-                    bot.send_message(message.chat.id, "Вы ещё не совершили не одной операции")
-            elif message.text == "Язык":
+                    if from_user['language'] == "ru":
+                        bot.send_message(message.chat.id, "Вы ещё не совершили не одной операции")
+                    elif from_user['language'] == "uz":
+                        bot.send_message(message.chat.id, "Siz hali hech qanday tranzaksiyani tugatmagansiz")
+            elif message.text == "Язык" or message.text == "Tilni o'zgartirish":
                 markup_inline = types.InlineKeyboardMarkup()
                 item_ru = types.InlineKeyboardButton(text="Русский 🇷🇺", callback_data="ru")
                 item_uz = types.InlineKeyboardButton(text="O'zbekcha 🇺🇿", callback_data="uz")
@@ -458,9 +550,12 @@ def get_text(message):
                     markup_reply = types.ReplyKeyboardMarkup(resize_keyboard=True)
                     button = types.KeyboardButton("Меню")
                     markup_reply.add(button)
-                    bot.reply_to(message, "Karta raqami qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)", reply_markup=markup_reply)
-                    # bot.send_sticker(call.message.chat.id, "CAACAgIAAxkBAAEIjgxkNrfCbktyzaZpKSm6wAeBsV-1PgACVyUAAl9weEuXcuNPf9dm4i8E")
+                    if from_user['language'] == "uz":
+                        bot.reply_to(message, "Karta raqami qabul qilindi ✅")
+                        bot.send_message(message.chat.id, "To'lov chekini skrinshotini yuboring:\n\n(Skrinshot file formatida bo'lmasligi lozim)", reply_markup=markup_reply)
+                    elif from_user['language'] == 'ru':
+                        bot.reply_to(message, "Карта принята ✅")
+                        bot.send_message(message.chat.id, "Отправьте криншот чека оплаты:\n\n(Скриншот не должен быть в файловом формате)", reply_markup=markup_reply)
             elif message.text.lower().startswith("id"):
                 if operation['photo_id']:
                     if connection:
@@ -472,8 +567,12 @@ def get_text(message):
                         button = types.KeyboardButton(f"NICK {previous_operation['nickname']}")
                         button2 = types.KeyboardButton("Меню")
                         markup_reply.add(button).row(button2)
-                        bot.reply_to(message, "ID qabul qilindi ✅")
-                        bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nick alyosha123\n\n(Boshida \"nick\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                        if from_user['language'] == "uz":
+                            bot.reply_to(message, "ID qabul qilindi ✅")
+                            bot.send_message(message.chat.id, "Endi sizning PUBG dagi nickname gizni yuboring :\n\nMasalan: nick alyosha123\n\n(Boshida \"nick\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                        elif from_user['language'] == 'ru':
+                            bot.reply_to(message, "ID принят✅")
+                            bot.send_message(message.chat.id, "Отправьте ваш игровой ник в PUBG :\n\nНапример: nick Andrey\n\n(В начале слово \"nick\" обьзательно)", reply_markup=markup_reply)
                     else:
                         markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
                         button = types.KeyboardButton("Меню")
@@ -489,8 +588,12 @@ def get_text(message):
                         with connection.cursor() as cursor:
                             cursor.execute(f"""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
                             admins = cursor.fetchall()
-                    bot.reply_to(message, "Nickname qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=menu)
+                    if from_user['language'] == "uz":
+                        bot.reply_to(message, "Nickname qabul qilindi ✅")
+                        bot.send_message(message.chat.id, "Zakaz qabul qilindi UC tushishini kuting", reply_markup=menu)
+                    elif from_user['language'] == 'ru':
+                        bot.reply_to(message, "Nickname принят ✅")
+                        bot.send_message(message.chat.id, "Ваш заказ принят ждите пополнения UC", reply_markup=menu)
                     markup_inline = types.InlineKeyboardMarkup()
                     item = types.InlineKeyboardButton(text="Подтвердить", callback_data=f"success_{operation['id']}")
                     item2 = types.InlineKeyboardButton(text="Отклонить", callback_data=f"reject_{operation['id']}")
@@ -511,14 +614,22 @@ def get_text(message):
                     button = types.KeyboardButton(f"{previous_operation['pubg_id']}")
                     button2 = types.KeyboardButton("Меню")
                     markup_reply.add(button).row(button2)
-                    bot.reply_to(message, "Chek qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                    if from_user['language'] == "uz":
+                        bot.reply_to(message, "Chek qabul qilindi ✅")
+                        bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                    elif from_user['language'] == "ru":
+                        bot.reply_to(message, "Чек принят ✅")
+                        bot.send_message(message.chat.id, "Отправьте ваш игровой ID :\n\nНапример: id 123456789\n\n(В начале слово \"id\" обьзательно)", reply_markup=markup_reply)
                 else:
                     markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True)
                     button = types.KeyboardButton("Меню")
                     markup_reply.add("Меню")
-                    bot.reply_to(message, "Chek qabul qilindi ✅")
-                    bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                    if from_user['language'] == "uz":
+                        bot.reply_to(message, "Chek qabul qilindi ✅")
+                        bot.send_message(message.chat.id, "Sizning PUBG dagi ID gizni yuboring :\n\nMasalan: id 123456789\n\n(Boshida \"id\" suzi bo'lishi shart)", reply_markup=markup_reply)
+                    elif from_user['language'] == "ru":
+                        bot.reply_to(message, "Чек принят ✅")
+                        bot.send_message(message.chat.id, "Отправьте ваш игровой ID :\n\nНапример: id 123456789\n\n(В начале слово \"id\" обьзательно)", reply_markup=markup_reply)
             
     
 bot.infinity_polling()
