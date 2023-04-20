@@ -117,9 +117,9 @@ def ansver(call):
                         connection.commit()
                     # bot.send_sticker(uc_user["user_id"], "CAACAgIAAxkBAAEInHRkPFODAAHCjXaANQb7WXbZGLy7TCoAAlklAALD8YBLj5S-b5wyYbMvBA")
                     if uc_user['language'] == "uz":
-                        bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\nPUBG_ID:{uc_operation['pubg_id']}\nTushdi ✅")
+                        bot.send_message(uc_user["user_id"], f"Buyurtma #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK: {uc_operation['nickname']}\nPUBG_ID: {uc_operation['pubg_id']}\nTushdi ✅")
                     elif uc_user['language'] == "ru":
-                        bot.send_message(uc_user["user_id"], f"Заказ #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK:{uc_operation['nickname']}\nPUBG_ID:{uc_operation['pubg_id']}\nПоступили ✅")
+                        bot.send_message(uc_user["user_id"], f"Заказ #{uc_operation['operation_id']}\n{uc_operation['uc']} UC\nNICK: {uc_operation['nickname']}\nPUBG_ID: {uc_operation['pubg_id']}\nПоступили ✅")
                     bot.send_message(call.message.chat.id, f"Операция № \"{operation_id}\" подтверждена")
                 elif uc_operation['status'] == "delivered":
                     bot.send_message(call.message.chat.id, "Эта операция уже подтвержена")
@@ -571,7 +571,7 @@ def get_text(message):
                         photo_file = bot.get_file(operation['photo_id'])
                         photo_bytes = bot.download_file(photo_file.file_path)
                         for admin in admins:
-                            bot.send_photo(admin['user_id'], photo_bytes, f"CARD: {operation['card']}\nPUBG_ID {operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\nNICK:{message.text}\n@{from_user['username']}", reply_markup=markup_inline)
+                            bot.send_photo(admin['user_id'], photo_bytes, f"CARD: {operation['card']}\nPUBG_ID: {operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\nNICK: {message.text}\n@{from_user['username']}", reply_markup=markup_inline)
                 
                 elif operation['photo_id']:
                     if not operation['pubg_id']:
