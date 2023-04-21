@@ -310,30 +310,6 @@ def ansver(call):
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
             elif from_user['language'] == "ru":
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
-        elif call.data == "uzcard":
-            photo = open('uzcard_photo.jpg', 'rb')
-            markup_inline = types.InlineKeyboardMarkup()
-            if from_user['language'] == "uz": 
-                item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
-            elif from_user['language'] == "ru":
-                item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
-            markup_inline.add(item_1)
-            if from_user['language'] == "uz": 
-                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
-            elif from_user['language'] == "ru":
-                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nПривязанный номер +998933127053", reply_markup=markup_inline)
-        elif call.data == "humo":
-            photo = open('humo_photo.jpg', 'rb')
-            markup_inline = types.InlineKeyboardMarkup()
-            if from_user['language'] == "uz": 
-                item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
-            elif from_user['language'] == "ru":
-                item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
-            markup_inline.add(item_1)
-            if from_user['language'] == "uz":
-                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
-            elif from_user['language'] == "ru":
-                bot.send_photo(call.message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nПривязанный номер +998933127053", reply_markup=markup_inline)
         elif call.data == "opcheck":
             if previous_operation:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
@@ -466,14 +442,15 @@ def ansver(call):
                     with connection.cursor() as cursor:
                         cursor.execute(f"""UPDATE `operations` SET price = '{rub}' WHERE id = {operation['id']};""")
                         connection.commit()
-            markup_inline = types.InlineKeyboardMarkup()
-            item_1 = types.InlineKeyboardButton(text="Uzcard", callback_data="uzcard")
-            item_2 = types.InlineKeyboardButton(text="Humo", callback_data="humo")
-            markup_inline.add(item_1, item_2)
+            markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
+            item_1 = types.KeyboardButton("Uzcard 💳")
+            item_2 = types.KeyboardButton("Humo 💳")
+            item_3 = types.KeyboardButton("Qiwi 🐣")
+            markup_reply.add(item_1, item_2).row(item_3)
             if from_user['language'] == "ru":
-                bot.send_message(call.message.chat.id, "Выберите способ оплаты:", reply_markup=markup_inline)
+                bot.send_message(call.message.chat.id, "Выберите способ оплаты:", reply_markup=markup_reply)
             elif from_user['language'] == "uz":
-                bot.send_message(call.message.chat.id, "To'lov usulini tanlang:", reply_markup=markup_inline)
+                bot.send_message(call.message.chat.id, "To'lov usulini tanlang:", reply_markup=markup_reply)
 
 @bot.message_handler(content_types=['text', 'photo'])
 def get_text(message):
@@ -571,7 +548,7 @@ def get_text(message):
                         photo_file = bot.get_file(operation['photo_id'])
                         photo_bytes = bot.download_file(photo_file.file_path)
                         for admin in admins:
-                            bot.send_photo(admin['user_id'], photo_bytes, f"CARD: {operation['card']}\nPUBG_ID: {operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\nNICK: {message.text}\n@{from_user['username']}", reply_markup=markup_inline)
+                            bot.send_photo(admin['user_id'], photo_bytes, f"CARD: {operation['card']}\nPUBG_ID: {operation['pubg_id']}\nUC: {operation['uc']}\nPRICE: {operation['price']}\nMETHOD: {operation['method']}\nNICK: {message.text}\n@{from_user['username']}", reply_markup=markup_inline)
                 
                 elif operation['photo_id']:
                     if not operation['pubg_id']:
@@ -608,7 +585,7 @@ def get_text(message):
                             elif from_user['language'] == "uz":
                                 bot.reply_to(message, "ID faqat sonlardan iborat bo'lishi kerak")
 
-                elif operation['price']:
+                elif operation['method']:
                     if not operation['card']:
                         if connection:
                             with connection.cursor() as cursor:
@@ -623,6 +600,54 @@ def get_text(message):
                         elif from_user['language'] == 'ru':
                             bot.reply_to(message, "Карта принята ✅")
                             bot.send_message(message.chat.id, "Отправьте криншот чека оплаты:", reply_markup=markup_reply)
+                elif operation['price']:
+                    if message.text == "Uzcard 💳":
+                        if connection:
+                            with connection.cursor() as cursor:
+                                cursor.execute(f"""UPDATE `operations` SET method = 'Uzcard' WHERE id = {operation['id']};""")
+                                connection.commit()
+                        photo = open('uzcard_photo.jpg', 'rb')
+                        markup_inline = types.InlineKeyboardMarkup()
+                        if from_user['language'] == "uz": 
+                            item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
+                        elif from_user['language'] == "ru":
+                            item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
+                        markup_inline.add(item_1)
+                        if from_user['language'] == "uz": 
+                            bot.send_photo(message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nUlangan nomer +998933127053", reply_markup=markup_inline)
+                        elif from_user['language'] == "ru":
+                            bot.send_photo(message.chat.id, photo, f"{operation['price']}\n\n8600 3141 6785 0751\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n8600 0423 0682 2007\nRAJABOV MARUF\nПривязанный номер +998933127053", reply_markup=markup_inline)
+                    elif message.text == "Humo 💳":
+                        if connection:
+                            with connection.cursor() as cursor:
+                                cursor.execute(f"""UPDATE `operations` SET method = 'Humo' WHERE id = {operation['id']};""")
+                                connection.commit()
+                        photo = open('humo_photo.jpg', 'rb')
+                        markup_inline = types.InlineKeyboardMarkup()
+                        if from_user['language'] == "uz": 
+                            item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
+                        elif from_user['language'] == "ru":
+                            item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
+                        markup_inline.add(item_1)
+                        if from_user['language'] == "uz":
+                            bot.send_photo(message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nUlangan nomer +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nUlangan nomer +998933127053", reply_markup=markup_inline)
+                        elif from_user['language'] == "ru":
+                            bot.send_photo(message.chat.id, photo, f"{operation['price']}\n\n9860 0801 9358 6643\nRAJABOVA UMIDA\nПривязанный номер +998933127053\n\n4073 4200 6731 7366\nRAJABOVA UMIDA\nПривязанный номер +998933127053", reply_markup=markup_inline)
+                    elif message.text == "Qiwi 🐣":
+                        if connection:
+                            with connection.cursor() as cursor:
+                                cursor.execute(f"""UPDATE `operations` SET method = 'Qiwi' WHERE id = {operation['id']};""")
+                                connection.commit()
+                        photo = open('qiwi_photo.jpg', 'rb')
+                        markup_inline = types.InlineKeyboardMarkup()
+                        if from_user['language'] == "uz": 
+                            item_1 = types.InlineKeyboardButton(text="Tõladim ✅", callback_data="opcheck")
+                        elif from_user['language'] == "ru":
+                            item_1 = types.InlineKeyboardButton(text="Оплатил ✅", callback_data="opcheck")
+                        markup_inline.add(item_1)
+                        bot.send_photo(message.chat.id, photo, f"{operation['price']}\n\nQiwi\n\n📱+998933127053\n💳 4890 4947 8269 9516 VISA\n💳 2200 7302 5851 6810 МИР", reply_markup=markup_inline)
+                    else:
+                        bot.send_message(message.chat.id, "Пожалуйста выберите из вариантов ниже ⬇️")
                 
         elif message.photo:
             if operation:
