@@ -533,7 +533,7 @@ def get_text(message):
                                 cursor.execute(f"""UPDATE `operations` SET nickname = '{message.text}', status = 'progress' WHERE id = {operation['id']};""")
                                 connection.commit()
                             with connection.cursor() as cursor:
-                                cursor.execute(f"""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
+                                cursor.execute("""SELECT user_id from `users` WHERE status = 'superadmin' or status = 'admin'""")
                                 admins = cursor.fetchall()
                         if from_user['language'] == "uz":
                             bot.reply_to(message, "Nickname qabul qilindi ✅")
@@ -560,7 +560,7 @@ def get_text(message):
                                     connection.commit()
                             if previous_operation:
                                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
-                                button = types.KeyboardButton(f"NICK{previous_operation['nickname']}")
+                                button = types.KeyboardButton(f"{previous_operation['nickname']}")
                                 button2 = types.KeyboardButton("Меню")
                                 markup_reply.add(button).row(button2)
                                 if from_user['language'] == "uz":
