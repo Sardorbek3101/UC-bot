@@ -189,6 +189,15 @@ def ansver(call):
                 with connection.cursor() as cursor:
                     cursor.execute(f"""INSERT INTO `operations` (user_id, operation_id, currency) VALUES ({from_user['id']},{operation_num+1}, 'rub');""")
                     connection.commit()
+        elif call.data == "valyuta":
+            markup_inline = types.InlineKeyboardMarkup()
+            item_1 = types.InlineKeyboardButton(text="UZS", callback_data="uzs")
+            item_2 = types.InlineKeyboardButton(text="RUB", callback_data="rub")
+            markup_inline.add(item_1, item_2)
+            if from_user['language'] == "uz":
+                bot.send_message(call.message.chat.id, "Valyutani tanlang:", reply_markup=markup_inline)
+            elif from_user['language'] == "ru":
+                bot.send_message(call.message.chat.id, "Выберите валюту:", reply_markup=markup_inline)
 
         tab_uc = False
         if call.data == 'ru':
@@ -239,7 +248,12 @@ def ansver(call):
                 item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="valyuta")
                 item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_2")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
-            if from_user['language'] == "uz": 
+            if call.data == "page_1":
+                if from_user['language'] == "uz": 
+                    bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
+                elif from_user['language'] == "ru":
+                    bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
+            elif from_user['language'] == "uz": 
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
             elif from_user['language'] == "ru":
                 bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
@@ -263,9 +277,9 @@ def ansver(call):
                 item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_3")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
             if from_user['language'] == "uz": 
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
             elif from_user['language'] == "ru":
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
         elif call.data == 'page_3':
             if valyuta == "uzs":
                 tsena = "💎1440 UC - 210.000 UZS 💵\n💎1950 UC - 250.000 UZS 💵\n💎2305 UC - 300.000 UZS 💵\n💎3025 UC - 400.000 UZS 💵\n💎4000 UC - 490.000 UZS 💵"
@@ -286,9 +300,9 @@ def ansver(call):
                 item_7 = types.InlineKeyboardButton(text="Дальше➡️", callback_data="page_4")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6, item_7)
             if from_user['language'] == "uz": 
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
             elif from_user['language'] == "ru":
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
         elif call.data == 'page_4':
             if valyuta == "uzs":
                 tsena = "💎5075 UC - 625.000 UZS 💵\n💎8400 UC - 960.000 UZS 💵\n💎10350 UC - 1.228.000 UZS 💵\n💎16800 UC - 1.938.000 UZS 💵\n💎25200 UC - 2.790.000 UZS 💵"
@@ -307,9 +321,9 @@ def ansver(call):
                 item_6 = types.InlineKeyboardButton(text="⬅️Назад", callback_data="page_3")
             markup_inline.add(item_1, item_2, item_3, item_4, item_5, item_6)
             if from_user['language'] == "uz": 
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC NARXLARI💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
             elif from_user['language'] == "ru":
-                bot.send_photo(call.message.chat.id, photo, "💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena, reply_markup=markup_inline)
+                bot.edit_message_media(media=types.InputMedia(type="photo", media=photo, caption="💸PUBG MOBILE UC ЦЕНЫ💸\n\n"+tsena),chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup_inline)
         elif call.data == "opcheck":
             if previous_operation:
                 markup_reply = types.ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
