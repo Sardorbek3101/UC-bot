@@ -18,7 +18,7 @@ except Exception as ex:
     print("connection refursed ...")
     print(ex)
 
-BOT_TOKEN = ("6061714192:AAE4UHTllJpt4TZv4bDOpuxXrhczLDrRHZw")
+BOT_TOKEN = ("6080749671:AAEx0CZaI3AIcf7u12P0CnS73YIpOhk-xXY")
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
